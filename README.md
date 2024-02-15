@@ -20,9 +20,9 @@ Dalgo uses [Prefect](https://www.prefect.io/) to manage job requirements across 
 
 <img src="https://github.com/DalgoT4D/dalgot4d.github.io/blob/main/dalgo-infrastructure.png" alt="Dalgo Infrastructure" />
 
-The Dalgo backend is a [Django application](https://github.com/DalgoT4D/DDP_backend) which serves requests made from a [React frontend](https://github.com/DalgoT4D/webapp). The backend communicates with Prefect via a [lightweight proxy](https://github.com/DalgoT4D/prefect-proxy) since Prefect's Python SDK is all async and Django seems to support async Python only half-heartedly.
+The Dalgo backend is a [Django application](https://github.com/DalgoT4D/DDP_backend) which serves requests made from a [React frontend](https://github.com/DalgoT4D/webapp). The backend communicates with Prefect via a [lightweight proxy](https://github.com/DalgoT4D/prefect-proxy) since Prefect's Python SDK is all async and Django seems to support async Python only [half-heartedly](https://docs.djangoproject.com/en/5.0/topics/async/).
 
-The backend maintains _organizations_ and _users_ in a database, and handles email communication with these users when required. Most users belong to only one organization, but the Dalgo team and our implementation partners are usually connected to more than one and the platform lets us switch context under the same login. 
+The backend maintains _organizations_ and _users_ in a database, and handles email communication to these users when required. Most users belong to only one organization, but the Dalgo team and our implementation partners are usually connected to more than one, and the platform lets us switch context under the same login. 
 
 Every organization has its own dedicated Airbyte workspace, which acts as a container for its data sources and its data warehouse. Prefect has no corresponding support, so we attach metadata to Prefect configurations to help us track which organizations they belong to. The backend's database tracks every Prefect [_deployment_ ](https://docs.prefect.io/latest/concepts/deployments/) against its organization, and the platform retrieves _flow runs_ and associated logs through each deployment.
 
@@ -38,8 +38,29 @@ In general, we create a Prefect deployment for a task if we want to provide a hi
 - `dbt deps`
 - ...
 
+Logs for these commands are displayed to the user when triggered from the UI, but are lost when they navigate away from the page.
 
+## Users and Roles
 
+We use Django's auth system and their standard [User](https://docs.djangoproject.com/en/5.0/topics/auth/default/#user-objects) model. Authentication is done via [`django-rest-framework`](https://www.django-rest-framework.org/) using [Token Authentication](https://www.django-rest-framework.org/api-guide/authentication/#tokenauthentication). Every email address maps to a unique `User` object.
 
+Membership in an `Org` is tracked via an `OrgUser` object, which is essentially a `User`, an `Org` and a role. The platform currently has only three roles (with more to come):
 
+1. `REPORT_VIEWER`
+2. `PIPELINE_MANAGER`
+3. `ACCOUNT_MANAGER`
+
+All Django endpoints are decorated with one of the following role-checkers:
+- `AnyOrgUser`: allows all three of the above
+- `CanManagePipelines`: allows (2) and (3)
+- `CanManageUsers`: allows (2) and (3)
+- `FullAccess`: only (3)
+
+You can see that the role system needs some work
+
+## Celery
+
+Some tasks which are triggered by http requests take too long to complete. We outsource these to [Celery](https://docs.celeryq.dev/en/latest/django/first-steps-with-django.html) which provides us a _task id_ using which we are able to poll the status of the task.  
+
+Celery is also used to schedule regular maintenance. One example is to release `TaskLocks` which are not released during the normal cleanup proces.
 
