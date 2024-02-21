@@ -13,6 +13,7 @@ OrgDbt
     target_type
     default_schema
 ```
+(Currently each org can only have one dbt project configured)
 
 The `gitrepo_url` is the full URL to their GitHub repo. If the repo is private, then Dalgo will need to pull from it with a [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens), and we store their `gitrepo_access_token_secret` for this purpose.
 
