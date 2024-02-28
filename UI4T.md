@@ -36,7 +36,7 @@ Sources and models are tracked by organization in the `OrgDbtModel` table in the
 
 We also maintain a table called `DbtEdge` which tracks the connections between sources and models. We do not track edges attached to intermediate transformations here.
 
-Intermediate transformations are tracked in a separate table, and consist of
+Intermediate transformations are tracked in a separate table called `OrgDbtOperation`, and consist of
 
 - a UUID
 - the UUID of the model being defined
