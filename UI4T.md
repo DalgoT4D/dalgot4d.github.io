@@ -33,6 +33,7 @@ Sources and models are tracked by organization in the `OrgDbtModel` table in the
 - a unique dbt model name
 - a user-friendly display name for the UI
 - the schema and table names in the warehouse
+- the set of output columns from this model
 
 We also maintain a table called `DbtEdge` which tracks the connections between sources and models. We do not track edges attached to intermediate transformations here.
 
@@ -42,6 +43,7 @@ Intermediate transformations are tracked in a separate table called `OrgDbtOpera
 - the UUID of the model being defined
 - the details of this transformation
 - its position in the sequence
+- the set of output columns from this operation
 
 In order for us to do this, we need to create the `OrgDbtModel` of the model _still under construction_... we don't show it to the user on the design canvas but we do create it in our database. We distinguish these models via the flag `OrgDbtModel.is_materialized` which is set to `True` only once the model has been finalized by the user
 
