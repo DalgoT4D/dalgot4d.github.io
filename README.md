@@ -56,7 +56,7 @@ All Django endpoints are decorated with one of the following role-checkers:
 - `CanManageUsers`: allows (2) and (3)
 - `FullAccess`: only (3)
 
-You can see that the role system needs some work
+The role system is [being upgraded](https://github.com/DalgoT4D/DDP_backend/issues/528)
 
 ## Celery
 
