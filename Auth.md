@@ -10,9 +10,10 @@ Pipeline Manager |  Update | Update |  Update | Update  |  View |  View
 Analyst | View  | View  | Update | View  |  View | View
 Guest | View  | View  | View | View | View  |  View
 
-Based on the table above; the database maintains the correct mapping of a role to its respective set of permissions. This is done by seeding the database and at the moment is not configurable once the seeded.
+Based on the table above; the database maintains the correct mapping of a role to its respective set of permissions. This is done by seeding the database and at the moment is not configurable once seeded.
 
-All api endpoint functions are now wrapped in a permission based decorator `has_permission`. Only if the requestor has this array of permissions, it can pass through the api else it will throw an `Unauthorized` error. 
+All api endpoint handlers are now wrapped in a new permission-based decorator called `has_permission`. Only if the requestor has this array of permissions can it pass through to the api, otherwise it will throw an `Unauthorized` error.
+
 ```
 @has_permission(["can_create_pipeline"])
 def endpoint_handler(request):
@@ -20,7 +21,7 @@ def endpoint_handler(request):
 ```
 The Ninja system allows us to group our handlers into collections based on the url prefix; these are defined in `urls.py`.
 
-Any http requests to the Dalgo backend come through an auth middleware defined in the `@ninjaapi` decorator. Notice the `auth` parameter
+Any http requests to the Dalgo backend come through an auth middleware defined in the `@ninjaapi` decorator. Notice the `auth` parameter:
 
 ```
 @ninjaapi.get("/endpoint", auth=auth.CustomAuthMiddleware())
@@ -70,8 +71,9 @@ This function does the following
 3. Find the first `OrgUser` mapped to this `User`. If the http headers contain an Org slug in the `x-dalgo-org` header, pick this Org
 4. If the `OrgUser` is found, fetch the permissions for this `OrgUser` and attach in the `request` object. Also store the `OrgUser` in the `request`.
 5. The request then goes through the `has_permission` decorator which then matches the set of permissions the `OrgUser` has against the permission needed to access the api.
-6. If `request.permissions` is a superset of permissions needed to access the api, then request goes through otherwise an error `Unauthorized` is raised. 
+6. If `request.permissions` contains the permissions needed to access the api, then request goes through. If not, `Unauthorized` error is raised. 
 
-If the `OrgUser` has no `Org` attached, then raise an error `register an organization first`. 
+If the `OrgUser` has no `Org` attached, then we raise the error `register an organization first`.
+
 (This shouldn't happen, in the sense that we try not to have `OrgUser`s without `Org`s anymore...)
 
