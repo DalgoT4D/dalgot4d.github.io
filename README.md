@@ -8,7 +8,7 @@ Dalgo tenants are called _organizations_. In our commercial offering, most organ
 
 Every organization has an associated _warehouse_. We currently support Postgres and BigQuery warehouses, and could potentially support Snowflake and Redshift.
 
-Dalgo allows an organization to configure multiple data sources and configure a frequency upon which to ingest data from those sources into the warehouse. We do this under the hood using [Airbyte](https://airbyte.com/).
+Dalgo allows an organization to configure multiple data sources and configure a frequency upon which to ingest data from those sources into their warehouse. We do this under the hood using [Airbyte](https://airbyte.com/).
 
 Once the data is in the warehouse it typically undergoes several journeys to ready it for its various consumers. This is typically done using SQL and Dalgo supports this via [dbt](https://www.getdbt.com/).
 
@@ -44,19 +44,23 @@ Logs for these commands are displayed to the user when triggered from the UI, bu
 
 We use Django's auth system and their standard [User](https://docs.djangoproject.com/en/5.0/topics/auth/default/#user-objects) model. Authentication is done via [`django-rest-framework`](https://www.django-rest-framework.org/) using [Token Authentication](https://www.django-rest-framework.org/api-guide/authentication/#tokenauthentication). Every email address maps to a unique `User` object.
 
-Membership in an `Org` is tracked via an `OrgUser` object, which is essentially a `User`, an `Org` and a role. The platform currently has only three roles (with more to come):
+Membership in an `Org` is tracked via an `OrgUser` object, which is essentially a `User`, an `Org` and a role. The platform currently has five roles:
 
-1. `REPORT_VIEWER`
-2. `PIPELINE_MANAGER`
-3. `ACCOUNT_MANAGER`
+0. Super Admin (for T4D employees who manage our Dalgo installation)
+1. Account Manager
+2. Pipeline Manager
+3. Analyst
+4. Guest
 
-All Django endpoints are decorated with one of the following role-checkers:
-- `AnyOrgUser`: allows all three of the above
-- `CanManagePipelines`: allows (2) and (3)
-- `CanManageUsers`: allows (2) and (3)
-- `FullAccess`: only (3)
+All Django API endpoints are decorated with a `has_permission` and a list of required permissions, for example
 
-The role system is [being upgraded](https://github.com/DalgoT4D/DDP_backend/issues/528)
+```
+@pipelineapi.post("v1/flows/", auth=auth.CustomAuthMiddleware())
+@has_permission(["can_create_pipeline"])
+def post_prefect_dataflow_v1(request, payload: PrefectDataFlowCreateSchema4):
+    """Create a prefect deployment i.e. a ddp dataflow"""
+    ...
+```
 
 ## Celery
 
