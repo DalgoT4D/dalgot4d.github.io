@@ -48,3 +48,12 @@ Intermediate transformations are tracked in a separate table called `OrgDbtOpera
 In order for us to do this, we need to create the `OrgDbtModel` of the model _still under construction_... we don't show it to the user on the design canvas but we do create it in our database. We distinguish these models via the flag `OrgDbtModel.is_materialized` which is set to `True` only once the model has been finalized by the user
 
 
+## Editing
+
+Editing an operation node means, updating its configuration. We don't allow editing the type of the operation which means `drop` operation remains a `drop` after updating too. All you can do is change the columns being dropped.
+
+Once you edit the node, the dbt sql on the disc is updated and the input coliumns for the next operation are updated. We do not propagete changes downstream. The user has to do this manually editing one operations after the other till they reach end of the chain. 
+
+Editing at the source vs editing in the middle of chain differs in the fact that for the former case we also need to make sure the source edges (inputs) are preserved. This is done by making sure key  `config->input_models` inside `config` json column for `OrgDbtOperation` is copied over & not overwrriten while updating.
+
+Propagating changes downstream to the entire pipeline is more complicated. Lets take an example of a chain with two operations, drop followed by a replace. So the chain would look something like `src1 -> drop -> rename -> table1`. Lets say in the drop operation we defined a configuration to remove columns `["col1", "col2"]`. Then in next replace operation, lets say renamed `"col3" -> "col3_new"`. In a scenario, where one edits the `drop` operation to now drop an additional `col3`, it is impossible for the system to propagate this downstream because now it doesn't which column they (user) might want to rename instead of `col3`.
