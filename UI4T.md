@@ -3,16 +3,16 @@
 UI for Transformations ("UI4T") is a feature which allows a Dalgo user to create a transformation pipeline using a visual editor. The starting point is a list of tables in the user's warehouse, from which they select one and proceed to define a series of SQL transformations on it. The result of this is
 
 - a dbt model on disk inside the organization's dbt repo, and
-- once the model is run, a new table in the warehouse
+- a new table in the warehouse once the model is run
 
 The transformation pipeline, or _workflow_ is represented visually using a directed graph. There are two node types:
 
 - sources and models
 - intermediate transformations
 
-From a source or a model, the user can begin a sequence of transformations via a pop-up menu. Selecting a transformation type opens an off-canvas configuration form where the user specifies how the transformation should work. For example, for a `CAST` operation they will specify the column(s) to be cast and the new data types which the values should be cast to.
+From a source or a model, the user can begin a sequence of transformations via a pop-up menu. Selecting a transformation type opens an off-canvas configuration form where the user specifies how the transformation should work. For example, for a `CAST` operation they will specify the column(s) to be cast and the new data types to which the values should be cast.
 
-Once this operation has been specified, a new node will appear on the canvas terminating a new edge originating from the model / source the user is transforming. The user can then either
+Once this operation has been specified, a new node will appear on the canvas which terminates the new edge originating from the model / source the user is transforming. The user can then either
 
 - continue defining a sequence of transformations
 - specify an end to the sequence and create a table
@@ -50,10 +50,16 @@ In order for us to do this, we need to create the `OrgDbtModel` of the model _st
 
 ## Editing
 
-Editing an operation node means, updating its configuration. We don't allow editing the type of the operation which means `drop` operation remains a `drop` after updating too. All you can do is change the columns being dropped.
+Editing an operation node means updating its configuration. We do not allow editing the _type_ of the operation i.e. a `drop` operation must remain a `drop` operation; only the columns being dropped can be changed.
 
-Once you edit the node, the dbt sql on the disc is updated and the input coliumns for the next operation are updated. We do not propagete changes downstream. The user has to do this manually editing one operations after the other till they reach end of the chain. 
+Once a node is edited, the dbt sql on disc is updated and the input coliumns are updated for the next operation only. We do not propagete changes downstream. The user has to do this manually editing one operations after the other till they reach end of the chain. 
 
-Editing at the source vs editing in the middle of chain differs in the fact that for the former case we also need to make sure the source edges (inputs) are preserved. This is done by making sure key  `config->input_models` inside `config` json column for `OrgDbtOperation` is copied over & not overwrriten while updating.
+Editing at the source vs editing in the middle of chain differs in the fact that for the former case we also need to make sure the source edges (inputs) are preserved. This is done by making sure the `config->input_models` inside the `config` column for `OrgDbtOperation` is copied over & not overwrriten while updating.
 
-Propagating changes downstream to the entire pipeline is more complicated. Lets take an example of a chain with two operations, drop followed by a replace. So the chain would look something like `src1 -> drop -> rename -> table1`. Lets say in the drop operation we defined a configuration to remove columns `["col1", "col2"]`. Then in next replace operation, lets say renamed `"col3" -> "col3_new"`. In a scenario, where one edits the `drop` operation to now drop an additional `col3`, it is impossible for the system to propagate this downstream because now it doesn't which column they (user) might want to rename instead of `col3`.
+Propagating changes downstream to the entire pipeline is more complicated. Let's take an example of a chain with two operations, drop followed by a replace:
+
+   `src1 -> drop -> rename -> table1`
+   
+Assume the `drop` operation is configured to remove the columns `["col1", "col2"]`, and in the following `replace` operation we rename `"col3" -> "col3_new"`. 
+
+Now if one edits the `drop` operation to drop column `col3`, the change cannot be propagated downstream, because `col3` no longer exists to be renamed.
