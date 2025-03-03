@@ -47,6 +47,23 @@ For the LLM service to generate this SQL query, it needs both credentials to the
 
 `POST` `api/warehouse/rag/train/`
 
+This invokes `warehousefunctions.train_rag_on_warehouse`. This should probably run via a Celery task (?) [TODO]
+
+We require that
+1. The `pgvector_creds` for the `org` exist in the secrets manager
+2. The training SQL exist in the `OrgWarehouseRagTraining` table
+
+(If the RAG training query doesn't exist, create it by running `warehousefunctions.scaffold_rag_training`. It basically needs the schemas, tables and columns to exclude from training. The helper `warehousefunctions.generate_training_sql` takes care of warehouse-specific SQL dialects)
+
+The training SQL is then sent over to the LLM service. The LLM service basically runs the following using the Vanna SDK:
+
+```
+  df_information_schema = self.vanna.run_sql(training_sql)
+  plan = self.vanna.get_training_plan_generic(df_information_schema)
+  self.vanna.train(plan=plan)
+```
+
+
 `POST` `api/warehouse/table_data/run_sql/`
 
 `POST` `api/warehouse/row_count/sql/`
