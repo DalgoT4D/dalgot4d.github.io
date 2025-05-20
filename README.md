@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Dalgo is an open-source data platform for the social sector. Dalgo is maintained by Project Tech4Dev which hosts a commercial multi-tenant instance at https://dashboard.dalgo.in/.
+Dalgo is an open-source data platform for the social sector. Dalgo is maintained by Project Tech4Dev which hosts a commercial multi-tenant instance at https://dashboard.dalgo.org/.
 
 Dalgo tenants are called _organizations_. In our commercial offering, most organizations are client NGOs using our platform. We also have an organization for demos, and an organization for internal dashboarding. The platform does not distinguish between these in terms of functionality.
 
